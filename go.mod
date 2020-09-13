@@ -1,4 +1,4 @@
-module github.com/go-mns/onet
+module github.com/OverlayNetwork/onet-go
 
 go 1.14
 
