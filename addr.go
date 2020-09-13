@@ -40,6 +40,17 @@ func RegisterProtocol(protocol *Protocol) error {
 	return nil
 }
 
+// RegisterProtocols .
+func RegisterProtocols(protocols ...*Protocol) error {
+	for _, protocol := range protocols {
+		if err := RegisterProtocol(protocol); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Addr address support overlay network
 type Addr struct {
 	subaddrs []SubAddr

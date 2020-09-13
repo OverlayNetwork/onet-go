@@ -53,7 +53,7 @@ var builtinProtocols = []*Protocol{
 }
 
 func init() {
-	for _, p := range builtinProtocols {
-		RegisterProtocol(p)
+	if err := RegisterProtocols(builtinProtocols...); err != nil {
+		panic(err)
 	}
 }

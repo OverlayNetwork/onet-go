@@ -2,10 +2,12 @@ package onet
 
 import (
 	"github.com/libs4go/errors"
+	"github.com/libs4go/slf4go"
 )
 
 // OverlayNetwork .
 type OverlayNetwork struct {
+	slf4go.Logger
 	Addr              *Addr
 	NavtiveAddr       *Addr
 	NativeTransport   NativeTransport
@@ -19,6 +21,11 @@ type OverlayNetwork struct {
 // ParseOverlayNetwork parse addr to generate overlay network config
 func ParseOverlayNetwork(addr *Addr, options ...Option) (*OverlayNetwork, error) {
 
+	var result = &OverlayNetwork{
+		Logger: slf4go.Get("overlay-network"),
+		Addr:   addr,
+	}
+
 	config := NewConfig()
 
 	for _, option := range options {
@@ -27,17 +34,17 @@ func ParseOverlayNetwork(addr *Addr, options ...Option) (*OverlayNetwork, error)
 		}
 	}
 
+	result.Config = config
+
 	subAddrs := addr.SubAddrs()
 
 	count := len(subAddrs)
 
-	var result = &OverlayNetwork{
-		Addr:   addr,
-		Config: config,
-	}
-
 	for i := 1; i < count; i++ {
+
 		current := subAddrs[count-i]
+
+		result.D("parse sub protocol {@p}", current.Protocol())
 
 		transport, ok := transports[current.Protocol()]
 
@@ -45,7 +52,15 @@ func ParseOverlayNetwork(addr *Addr, options ...Option) (*OverlayNetwork, error)
 			return nil, errors.Wrap(ErrNotFound, "transport support protocol %s not found", current.Protocol())
 		}
 
+		// warning !!! Never change the match order
+		// because MuxTransport mixin NativeTransport and OverlayTransport that must be first test
 		switch t := transport.(type) {
+		case MuxTransport:
+			result.D("transport {@t} is mux transport", transport)
+			result.MuxTransports = append(result.MuxTransports, t)
+			result.MuxAddrs = append(result.MuxAddrs, JoinAddr(current))
+			result.OverlayTransports = append(result.OverlayTransports, t)
+			result.OverlayAddrs = append(result.OverlayAddrs, JoinAddr(current))
 		case NativeTransport:
 			result.NavtiveAddr = JoinAddr(subAddrs[0 : count-i+1]...)
 
@@ -69,11 +84,6 @@ func ParseOverlayNetwork(addr *Addr, options ...Option) (*OverlayNetwork, error)
 
 			return result, nil
 		case OverlayTransport:
-			result.OverlayTransports = append(result.OverlayTransports, t)
-			result.OverlayAddrs = append(result.OverlayAddrs, JoinAddr(current))
-		case MuxTransport:
-			result.MuxTransports = append(result.MuxTransports, t)
-			result.MuxAddrs = append(result.MuxAddrs, JoinAddr(current))
 			result.OverlayTransports = append(result.OverlayTransports, t)
 			result.OverlayAddrs = append(result.OverlayAddrs, JoinAddr(current))
 		}
