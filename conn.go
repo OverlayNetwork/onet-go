@@ -44,7 +44,7 @@ func (network *OverlayNetwork) Dial(ctx context.Context) (Conn, error) {
 	var muxTransport MuxTransport
 
 	for i, transport := range network.MuxTransports {
-		conn, err = transport.Dial(ctx, network, network.MuxAddrs[i], network.Config)
+		conn, err = transport.Dial(ctx, network, i)
 
 		if err != nil {
 			if errors.Unwrap(err) != ErrMuxNotFound {
@@ -60,29 +60,27 @@ func (network *OverlayNetwork) Dial(ctx context.Context) (Conn, error) {
 	}
 
 	var overlayTransports []OverlayTransport
-	var addrs []*Addr
 
 	if muxTransport == nil {
-		conn, err = network.NativeTransport.Dial(ctx, network, network.NavtiveAddr, network.Config)
+		conn, err = network.NativeTransport.Dial(ctx, network)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "call transport %s Dial error", network.NativeTransport)
 		}
 
 		overlayTransports = network.OverlayTransports
-		addrs = network.OverlayAddrs
+
 	} else {
 		for i, t := range network.OverlayTransports {
 			if t == muxTransport {
 				overlayTransports = network.OverlayTransports[i+1:]
-				addrs = network.OverlayAddrs[i+1:]
 				break
 			}
 		}
 	}
 
 	for i, t := range overlayTransports {
-		conn, err = t.Client(network, conn, addrs[i], network.Config)
+		conn, err = t.Client(network, conn, i)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "call transport %s Dial error", network.NativeTransport)

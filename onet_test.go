@@ -63,19 +63,19 @@ func (mock *mockMux) Protocol() string {
 	return "mux"
 }
 
-func (mock *mockMux) Listen(onet *OverlayNetwork, laddr *Addr, config *Config) (Listener, error) {
+func (mock *mockMux) Listen(onet *OverlayNetwork, chainOffset int) (Listener, error) {
 	return nil, nil
 }
 
-func (mock *mockMux) Dial(ctx context.Context, onet *OverlayNetwork, raddr *Addr, config *Config) (Conn, error) {
+func (mock *mockMux) Dial(ctx context.Context, onet *OverlayNetwork, chainOffset int) (Conn, error) {
 	return nil, nil
 }
 
-func (mock *mockMux) Client(onet *OverlayNetwork, conn Conn, raddr *Addr, config *Config) (Conn, error) {
+func (mock *mockMux) Client(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
 	return nil, nil
 }
 
-func (mock *mockMux) Server(onet *OverlayNetwork, conn Conn, laddr *Addr, config *Config) (Conn, error) {
+func (mock *mockMux) Server(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
 	return nil, nil
 }
 
@@ -89,11 +89,11 @@ func (mock *mockKCP) Protocol() string {
 	return "kcp"
 }
 
-func (mock *mockKCP) Client(onet *OverlayNetwork, conn Conn, raddr *Addr, config *Config) (Conn, error) {
+func (mock *mockKCP) Client(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
 	return nil, nil
 }
 
-func (mock *mockKCP) Server(onet *OverlayNetwork, conn Conn, laddr *Addr, config *Config) (Conn, error) {
+func (mock *mockKCP) Server(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
 	return nil, nil
 }
 
@@ -107,11 +107,11 @@ func (mock *mockUDP) Protocol() string {
 	return "udp"
 }
 
-func (mock *mockUDP) Listen(onet *OverlayNetwork, laddr *Addr, config *Config) (Listener, error) {
+func (mock *mockUDP) Listen(onet *OverlayNetwork) (Listener, error) {
 	return nil, nil
 }
 
-func (mock *mockUDP) Dial(ctx context.Context, onet *OverlayNetwork, raddr *Addr, config *Config) (Conn, error) {
+func (mock *mockUDP) Dial(ctx context.Context, onet *OverlayNetwork) (Conn, error) {
 	return nil, nil
 }
 

@@ -41,7 +41,7 @@ type overlayNetworkListener struct {
 }
 
 func newOverlayNetworkListener(network *OverlayNetwork) (Listener, error) {
-	nativeListener, err := network.NativeTransport.Listen(network, network.NavtiveAddr, network.Config)
+	nativeListener, err := network.NativeTransport.Listen(network)
 
 	if err != nil {
 		return nil, errors.Wrap(err, "call %s transport listen error", network.NativeTransport)
@@ -54,7 +54,7 @@ func newOverlayNetworkListener(network *OverlayNetwork) (Listener, error) {
 	}
 
 	for i, mux := range network.MuxTransports {
-		muxlistener, err := mux.Listen(network, network.MuxAddrs[i], network.Config)
+		muxlistener, err := mux.Listen(network, i)
 
 		if err != nil {
 			onetListener.Close()
@@ -102,11 +102,9 @@ func (listener *overlayNetworkListener) doAccept(l Listener) {
 func (listener *overlayNetworkListener) wrapConn(l Listener, conn Conn) {
 
 	var overlayTransports []OverlayTransport
-	var addrs []*Addr
 
 	if listener.nativeListener == l {
 		overlayTransports = listener.network.OverlayTransports
-		addrs = listener.network.OverlayAddrs
 	} else {
 		for i, tl := range listener.muxListeners {
 			if tl == l {
@@ -115,7 +113,7 @@ func (listener *overlayNetworkListener) wrapConn(l Listener, conn Conn) {
 				for j, transport := range listener.network.OverlayTransports {
 					if transport == muxTransport {
 						overlayTransports = listener.network.OverlayTransports[j+1:]
-						addrs = listener.network.OverlayAddrs[j+1:]
+
 						break
 					}
 				}
@@ -128,7 +126,7 @@ func (listener *overlayNetworkListener) wrapConn(l Listener, conn Conn) {
 	var err error
 
 	for i, transport := range overlayTransports {
-		conn, err = transport.Server(listener.network, conn, addrs[i], listener.network.Config)
+		conn, err = transport.Server(listener.network, conn, i)
 
 		if err != nil {
 			listener.acceptConns <- &acceptConn{

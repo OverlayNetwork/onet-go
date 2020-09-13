@@ -16,20 +16,22 @@ type Transport interface {
 // NativeTransport .
 type NativeTransport interface {
 	Transport
-	Listen(onet *OverlayNetwork, laddr *Addr, config *Config) (Listener, error)
-	Dial(ctx context.Context, onet *OverlayNetwork, raddr *Addr, config *Config) (Conn, error)
+	Listen(onet *OverlayNetwork) (Listener, error)
+	Dial(ctx context.Context, onet *OverlayNetwork) (Conn, error)
 }
 
 // OverlayTransport .
 type OverlayTransport interface {
 	Transport
-	Client(onet *OverlayNetwork, conn Conn, raddr *Addr, config *Config) (Conn, error)
-	Server(onet *OverlayNetwork, conn Conn, laddr *Addr, config *Config) (Conn, error)
+	Client(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error)
+	Server(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error)
 }
 
 // MuxTransport .
 type MuxTransport interface {
-	NativeTransport
+	Transport
+	Listen(onet *OverlayNetwork, chainOffset int) (Listener, error)
+	Dial(ctx context.Context, onet *OverlayNetwork, chainOffset int) (Conn, error)
 	OverlayTransport
 }
 
