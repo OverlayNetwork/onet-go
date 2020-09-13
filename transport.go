@@ -14,21 +14,21 @@ type Transport interface {
 // NativeTransport .
 type NativeTransport interface {
 	Transport
-	Listen(laddr *Addr, config *Config) (Listener, error)
-	Dial(ctx context.Context, raddr *Addr, config *Config) (Conn, error)
+	Listen(onet *OverlayNetwork, laddr *Addr, config *Config) (Listener, error)
+	Dial(ctx context.Context, onet *OverlayNetwork, raddr *Addr, config *Config) (Conn, error)
 }
 
 // OverlayTransport .
 type OverlayTransport interface {
 	Transport
-	Client(conn Conn, raddr *Addr, config *Config) (Conn, error)
-	Server(conn Conn, laddr *Addr, config *Config) (Conn, error)
+	Client(onet *OverlayNetwork, conn Conn, raddr *Addr, config *Config) (Conn, error)
+	Server(onet *OverlayNetwork, conn Conn, laddr *Addr, config *Config) (Conn, error)
 }
 
 // MuxTransport .
 type MuxTransport interface {
-	OpenStream(ctx context.Context, raddr *Addr, config *Config) (Conn, error)
-	AcceptStream() (Conn, error)
+	NativeTransport
+	OverlayTransport
 }
 
 var transports = make(map[string]Transport)
