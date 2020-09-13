@@ -1,11 +1,11 @@
-package netty
+package onet
 
 import (
 	"github.com/libs4go/errors"
 )
 
 // ScopeOfAPIError .
-const errVendor = "netty"
+const errVendor = "onet"
 
 // errors
 var (

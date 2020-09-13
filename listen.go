@@ -1,4 +1,4 @@
-package netty
+package onet
 
 // Listener overlay network listener equal to net.Listener
 type Listener interface {

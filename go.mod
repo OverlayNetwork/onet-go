@@ -1,4 +1,4 @@
-module github.com/go-mns/netty
+module github.com/go-mns/onet
 
 go 1.14
 

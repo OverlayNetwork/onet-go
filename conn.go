@@ -1,4 +1,4 @@
-package netty
+package onet
 
 import (
 	"io"

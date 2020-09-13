@@ -1,4 +1,4 @@
-package netty
+package onet
 
 import "github.com/libs4go/sdi4go"
 

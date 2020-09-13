@@ -1,3 +1,3 @@
-# netty
+# onet
 
-golang net library builtin support overlay network
+golang overlay network library
