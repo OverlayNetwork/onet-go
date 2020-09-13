@@ -8,7 +8,7 @@ import (
 )
 
 type testJSON struct {
-	Name Addr
+	Name *Addr
 }
 
 func TestAddr(t *testing.T) {

@@ -12,9 +12,9 @@ import (
 type Conn interface {
 	io.ReadWriteCloser
 
-	LocalAddr() Addr
+	LocalAddr() *Addr
 
-	RemoteAddr() Addr
+	RemoteAddr() *Addr
 
 	SetDeadline(t time.Time) error
 
