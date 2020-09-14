@@ -3,6 +3,7 @@ package onet
 import (
 	"context"
 	"io"
+	"net"
 	"time"
 
 	"github.com/libs4go/errors"
@@ -21,6 +22,8 @@ type Conn interface {
 	SetReadDeadline(t time.Time) error
 
 	SetWriteDeadline(t time.Time) error
+
+	ONet() *OverlayNetwork
 }
 
 // Dial dial to the remote overlay address
@@ -89,4 +92,88 @@ func (network *OverlayNetwork) Dial(ctx context.Context) (Conn, error) {
 	}
 
 	return conn, nil
+}
+
+type netConnWrapper struct {
+	net.Conn
+	onet  *OverlayNetwork
+	laddr *Addr
+	raddr *Addr
+}
+
+func (conn *netConnWrapper) LocalAddr() *Addr {
+	return conn.laddr
+}
+
+func (conn *netConnWrapper) RemoteAddr() *Addr {
+	return conn.raddr
+}
+
+func (conn *netConnWrapper) ONet() *OverlayNetwork {
+	return conn.onet
+}
+
+// ToOnetConn .
+func ToOnetConn(conn net.Conn, onet *OverlayNetwork) (Conn, error) {
+
+	laddr, err := FromNetAddr(conn.LocalAddr())
+
+	if err != nil {
+		return nil, err
+	}
+
+	raddr, err := FromNetAddr(conn.RemoteAddr())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &netConnWrapper{
+		Conn:  conn,
+		onet:  onet,
+		laddr: laddr,
+		raddr: raddr,
+	}, nil
+}
+
+type onetConnWrapper struct {
+	Conn
+	laddr net.Addr
+	raddr net.Addr
+}
+
+func (conn *onetConnWrapper) LocalAddr() net.Addr {
+	return conn.laddr
+}
+
+func (conn *onetConnWrapper) RemoteAddr() net.Addr {
+	return conn.raddr
+}
+
+// FromOnetConn .
+func FromOnetConn(conn Conn) (net.Conn, error) {
+
+	wrapper, ok := conn.(*netConnWrapper)
+
+	if ok {
+		return wrapper.Conn, nil
+	}
+
+	laddr, err := conn.LocalAddr().ResolveNetAddr()
+
+	if err != nil {
+		return nil, err
+	}
+
+	raddr, err := conn.RemoteAddr().ResolveNetAddr()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &onetConnWrapper{
+		Conn:  conn,
+		laddr: laddr,
+		raddr: raddr,
+	}, nil
 }

@@ -31,12 +31,7 @@ func checkIP(value string) error {
 
 var builtinProtocols = []*Protocol{
 	{
-		Name:       "ip4",
-		CheckValue: checkIP,
-		HasValue:   true,
-	},
-	{
-		Name:       "ip6",
+		Name:       "ip",
 		CheckValue: checkIP,
 		HasValue:   true,
 	},

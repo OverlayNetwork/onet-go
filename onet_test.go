@@ -127,7 +127,7 @@ func init() {
 
 func TestParseOverlayNetwork(t *testing.T) {
 
-	raddr, err := NewAddr("/ip4/127.0.0.1/udp/1812/kcp/mux")
+	raddr, err := NewAddr("/ip/127.0.0.1/udp/1812/kcp/mux")
 
 	require.NoError(t, err)
 
@@ -160,12 +160,12 @@ func TestParseOverlayNetwork(t *testing.T) {
 
 	require.Equal(t, network.OverlayTransports[1], network.MuxTransports[0])
 
-	require.Equal(t, network.NavtiveAddr.String(), "/ip4/127.0.0.1/udp/1812")
+	require.Equal(t, network.NavtiveAddr.String(), "/ip/127.0.0.1/udp/1812")
 }
 
 func BenchmarkParseOverlayNetwork(t *testing.B) {
 	for i := 0; i < t.N; i++ {
-		raddr, err := NewAddr("/ip4/127.0.0.1/udp/1812/kcp/mux")
+		raddr, err := NewAddr("/ip/127.0.0.1/udp/1812/kcp/mux")
 
 		require.NoError(t, err)
 

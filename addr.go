@@ -2,6 +2,7 @@ package onet
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/libs4go/errors"
@@ -202,4 +203,66 @@ func newSubAddr(comps []string) (SubAddr, []string, error) {
 	}
 
 	return sa, comps, nil
+}
+
+// ResolveNetAddr .
+func (addr *Addr) ResolveNetAddr() (net.Addr, error) {
+	subAddrs := addr.SubAddrs()
+
+	if len(subAddrs) < 2 {
+		return nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
+	}
+
+	if subAddrs[0].Protocol() != "ip" {
+		return nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
+	}
+
+	if subAddrs[1].Protocol() != "tcp" && subAddrs[1].Protocol() != "udp" {
+		return nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
+	}
+
+	str := fmt.Sprintf("%s:%s", subAddrs[0].Value(), subAddrs[1].Value())
+
+	if subAddrs[1].Protocol() == "tcp" {
+		tcpAddr, err := net.ResolveTCPAddr("tcp", str)
+
+		if err != nil {
+			return nil, errors.Wrap(err, "resolve net addr %s error", str)
+		}
+
+		return tcpAddr, nil
+	}
+
+	udpAddr, err := net.ResolveUDPAddr("udp", str)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "resolve net addr %s error", str)
+	}
+
+	return udpAddr, nil
+}
+
+// FromNetAddr create addr from net.Addr
+func FromNetAddr(addr net.Addr) (*Addr, error) {
+
+	switch addr.Network() {
+	case "tcp", "tcp6", "tcp4":
+		tcpAddr := addr.(*net.TCPAddr)
+		if tcpAddr.Zone != "" {
+			return NewAddr(fmt.Sprintf("/ip/%s%%%s/tcp/%d", tcpAddr.IP.String(), tcpAddr.Zone, tcpAddr.Port))
+		}
+
+		return NewAddr(fmt.Sprintf("/ip/%s/tcp/%d", tcpAddr.IP.String(), tcpAddr.Port))
+
+	case "udp", "udp4", "udp6":
+		udpAddr := addr.(*net.UDPAddr)
+		if udpAddr.Zone != "" {
+			return NewAddr(fmt.Sprintf("/ip/%s%%%s/udp/%d", udpAddr.IP.String(), udpAddr.Zone, udpAddr.Port))
+		}
+
+		return NewAddr(fmt.Sprintf("/ip/%s/udp/%d", udpAddr.IP.String(), udpAddr.Port))
+
+	default:
+		return nil, errors.Wrap(ErrAddr, "unsupport net.Addr %s %s", addr.Network(), addr.String())
+	}
 }

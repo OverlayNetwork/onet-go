@@ -1,6 +1,10 @@
 package onet
 
-import "github.com/libs4go/errors"
+import (
+	"net"
+
+	"github.com/libs4go/errors"
+)
 
 // Listener overlay network listener equal to net.Listener
 type Listener interface {
@@ -165,4 +169,82 @@ func (listener *overlayNetworkListener) Close() error {
 
 func (listener *overlayNetworkListener) Addr() *Addr {
 	return listener.network.Addr
+}
+
+type netListenerWrapper struct {
+	listener net.Listener
+	laddr    *Addr
+	onet     *OverlayNetwork
+}
+
+func (listener *netListenerWrapper) Accept() (Conn, error) {
+
+	conn, err := listener.listener.Accept()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return ToOnetConn(conn, listener.onet)
+}
+func (listener *netListenerWrapper) Close() error {
+	return listener.listener.Close()
+}
+func (listener *netListenerWrapper) Addr() *Addr {
+	return listener.laddr
+}
+
+// ToOnetListener .
+func ToOnetListener(listener net.Listener, onet *OverlayNetwork) (Listener, error) {
+
+	laddr, err := FromNetAddr(listener.Addr())
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &netListenerWrapper{
+		listener: listener,
+		laddr:    laddr,
+		onet:     onet,
+	}, nil
+}
+
+type onetListenerWrapper struct {
+	listener Listener
+	laddr    net.Addr
+}
+
+func (listener *onetListenerWrapper) Accept() (net.Conn, error) {
+
+	conn, err := listener.listener.Accept()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return FromOnetConn(conn)
+}
+
+func (listener *onetListenerWrapper) Close() error {
+	return listener.listener.Close()
+}
+
+func (listener *onetListenerWrapper) Addr() net.Addr {
+	return listener.laddr
+}
+
+// FromOnetListener .
+func FromOnetListener(listener Listener) (net.Listener, error) {
+	laddr, err := listener.Addr().ResolveNetAddr()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &onetListenerWrapper{
+		listener: listener,
+		laddr:    laddr,
+	}, nil
+
 }

@@ -12,7 +12,7 @@ type testJSON struct {
 }
 
 func TestAddr(t *testing.T) {
-	addr, err := NewAddr("/ip4/127.0.0.1/udp/1812")
+	addr, err := NewAddr("/ip/127.0.0.1/udp/1812")
 
 	require.NoError(t, err)
 
@@ -22,17 +22,17 @@ func TestAddr(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, `"/ip4/127.0.0.1/udp/1812"`, string(buff))
+	require.Equal(t, `"/ip/127.0.0.1/udp/1812"`, string(buff))
 
 	var j *testJSON
 
 	err = json.Unmarshal([]byte(`
 	{
-		"name": "/ip4/127.0.0.1/tcp/1812"
+		"name": "/ip/127.0.0.1/tcp/1812"
 	}
 	`), &j)
 
 	require.NoError(t, err)
 
-	require.Equal(t, j.Name.String(), "/ip4/127.0.0.1/tcp/1812")
+	require.Equal(t, j.Name.String(), "/ip/127.0.0.1/tcp/1812")
 }
