@@ -83,12 +83,12 @@ func (network *OverlayNetwork) Dial(ctx context.Context) (Conn, error) {
 	}
 
 	for i, t := range overlayTransports {
+
 		conn, err = t.Client(network, conn, i)
 
 		if err != nil {
 			return nil, errors.Wrap(err, "call transport %s Dial error", network.NativeTransport)
 		}
-
 	}
 
 	return conn, nil
@@ -127,6 +127,17 @@ func ToOnetConn(conn net.Conn, onet *OverlayNetwork) (Conn, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return &netConnWrapper{
+		Conn:  conn,
+		onet:  onet,
+		laddr: laddr,
+		raddr: raddr,
+	}, nil
+}
+
+// ToOnetConnWithAddr .
+func ToOnetConnWithAddr(conn net.Conn, onet *OverlayNetwork, laddr, raddr *Addr) (Conn, error) {
 
 	return &netConnWrapper{
 		Conn:  conn,
