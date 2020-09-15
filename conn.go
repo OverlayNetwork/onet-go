@@ -164,11 +164,11 @@ func (conn *onetConnWrapper) RemoteAddr() net.Addr {
 // FromOnetConn .
 func FromOnetConn(conn Conn) (net.Conn, error) {
 
-	wrapper, ok := conn.(*netConnWrapper)
+	// wrapper, ok := conn.(*netConnWrapper)
 
-	if ok {
-		return wrapper.Conn, nil
-	}
+	// if ok {
+	// 	return wrapper.Conn, nil
+	// }
 
 	laddr, err := conn.LocalAddr().ResolveNetAddr()
 

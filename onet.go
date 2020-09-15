@@ -91,3 +91,20 @@ func ParseOverlayNetwork(addr *Addr, options ...Option) (*OverlayNetwork, error)
 
 	return nil, errors.Wrap(ErrNotFound, "expect native transport")
 }
+
+// FindTransports find transports by protocol name
+func (network *OverlayNetwork) FindTransports(protocol string) []Transport {
+	var transports []Transport
+
+	if protocol == network.NativeTransport.Protocol() {
+		transports = append(transports, network.NativeTransport)
+	}
+
+	for _, transport := range network.OverlayTransports {
+		if transport.Protocol() == protocol {
+			transports = append(transports, transport)
+		}
+	}
+
+	return transports
+}
