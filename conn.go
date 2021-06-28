@@ -5,8 +5,6 @@ import (
 	"io"
 	"net"
 	"time"
-
-	"github.com/libs4go/errors"
 )
 
 // Conn overlay network conn object equal to net.Conn
@@ -26,6 +24,16 @@ type Conn interface {
 	ONet() *OverlayNetwork
 }
 
+func callClientNext(ctx context.Context, network *OverlayNetwork, i int) (Conn, error) {
+	if i < len(network.Transports) {
+		return network.Transports[i].Client(ctx, network, network.Addrs[i], func() (Conn, error) {
+			return callClientNext(ctx, network, i+1)
+		})
+	}
+
+	return nil, nil
+}
+
 // Dial dial to the remote overlay address
 func Dial(ctx context.Context, raddr *Addr, options ...Option) (Conn, error) {
 	network, err := ParseOverlayNetwork(raddr, options...)
@@ -34,64 +42,7 @@ func Dial(ctx context.Context, raddr *Addr, options ...Option) (Conn, error) {
 		return nil, err
 	}
 
-	return network.Dial(ctx)
-}
-
-// Dial dial to the remote overlay address with config
-func (network *OverlayNetwork) Dial(ctx context.Context) (Conn, error) {
-
-	var conn Conn
-
-	var err error
-
-	var muxTransport MuxTransport
-
-	for i, transport := range network.MuxTransports {
-		conn, err = transport.Dial(ctx, network, i)
-
-		if err != nil {
-			if errors.Unwrap(err) != ErrMuxNotFound {
-				return nil, errors.Wrap(err, "call mux %s Dial error", transport)
-			}
-
-			continue
-		}
-
-		muxTransport = transport
-
-		break
-	}
-
-	var overlayTransports []OverlayTransport
-
-	if muxTransport == nil {
-		conn, err = network.NativeTransport.Dial(ctx, network)
-
-		if err != nil {
-			return nil, errors.Wrap(err, "call transport %s Dial error", network.NativeTransport)
-		}
-
-		overlayTransports = network.OverlayTransports
-
-	} else {
-		for i, t := range network.OverlayTransports {
-			if t == muxTransport {
-				overlayTransports = network.OverlayTransports[i+1:]
-				break
-			}
-		}
-	}
-
-	for i, t := range overlayTransports {
-
-		conn, err = t.Client(network, conn, i)
-
-		if err != nil {
-			return nil, errors.Wrap(err, "call transport %s Dial error", network.NativeTransport)
-		}
-	}
-
-	return conn, nil
+	return callClientNext(ctx, network, 0)
 }
 
 type netConnWrapper struct {
@@ -163,12 +114,6 @@ func (conn *onetConnWrapper) RemoteAddr() net.Addr {
 
 // FromOnetConn .
 func FromOnetConn(conn Conn) (net.Conn, error) {
-
-	// wrapper, ok := conn.(*netConnWrapper)
-
-	// if ok {
-	// 	return wrapper.Conn, nil
-	// }
 
 	laddr, err := conn.LocalAddr().ResolveNetAddr()
 

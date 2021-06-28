@@ -23,11 +23,7 @@ func (builder *Config) Bind(name string, obj interface{}) error {
 func (builder *Config) Get(name string, objptr interface{}) bool {
 	err := builder.injector.Create(name, objptr)
 
-	if err != nil {
-		return false
-	}
-
-	return true
+	return err == nil
 }
 
 // Option config overlay network start option

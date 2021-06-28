@@ -11,29 +11,12 @@ import (
 type Transport interface {
 	fmt.Stringer
 	Protocol() string
+	Client(ctx context.Context, onet *OverlayNetwork, addr *Addr, next Next) (Conn, error)
+	Server(ctx context.Context, onet *OverlayNetwork, addr *Addr, next Next) (Conn, error)
 }
 
-// NativeTransport .
-type NativeTransport interface {
-	Transport
-	Listen(onet *OverlayNetwork) (Listener, error)
-	Dial(ctx context.Context, onet *OverlayNetwork) (Conn, error)
-}
-
-// OverlayTransport .
-type OverlayTransport interface {
-	Transport
-	Client(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error)
-	Server(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error)
-}
-
-// MuxTransport .
-type MuxTransport interface {
-	Transport
-	Listen(onet *OverlayNetwork, chainOffset int) (Listener, error)
-	Dial(ctx context.Context, onet *OverlayNetwork, chainOffset int) (Conn, error)
-	OverlayTransport
-}
+// Next .
+type Next func() (Conn, error)
 
 var transports = make(map[string]Transport)
 

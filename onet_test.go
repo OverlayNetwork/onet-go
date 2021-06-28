@@ -15,7 +15,7 @@ import (
 var loggerjson = `
 {
 	"default":{
-		"backend":"null",
+		"backend":"console",
 		"level":"debug"
 	},
 	"backend":{
@@ -42,6 +42,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 }
 
 var mockProtocols = []*Protocol{
@@ -49,69 +50,31 @@ var mockProtocols = []*Protocol{
 		Name: "mux",
 	},
 	{
-		Name: "kcp",
+		Name: "tls",
+	},
+	{
+		Name:   "kcp",
+		Native: true,
 	},
 }
 
-type mockMux struct{}
+type mockTransport struct {
+	name string
+}
 
-func (mock *mockMux) String() string {
+func (mock *mockTransport) String() string {
 	return mock.Protocol()
 }
 
-func (mock *mockMux) Protocol() string {
-	return "mux"
+func (mock *mockTransport) Protocol() string {
+	return mock.name
 }
 
-func (mock *mockMux) Listen(onet *OverlayNetwork, chainOffset int) (Listener, error) {
+func (mock *mockTransport) Client(ctx context.Context, onet *OverlayNetwork, addr *Addr, next Next) (Conn, error) {
 	return nil, nil
 }
 
-func (mock *mockMux) Dial(ctx context.Context, onet *OverlayNetwork, chainOffset int) (Conn, error) {
-	return nil, nil
-}
-
-func (mock *mockMux) Client(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
-	return nil, nil
-}
-
-func (mock *mockMux) Server(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
-	return nil, nil
-}
-
-type mockKCP struct{}
-
-func (mock *mockKCP) String() string {
-	return mock.Protocol()
-}
-
-func (mock *mockKCP) Protocol() string {
-	return "kcp"
-}
-
-func (mock *mockKCP) Client(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
-	return nil, nil
-}
-
-func (mock *mockKCP) Server(onet *OverlayNetwork, conn Conn, chainOffset int) (Conn, error) {
-	return nil, nil
-}
-
-type mockUDP struct{}
-
-func (mock *mockUDP) String() string {
-	return mock.Protocol()
-}
-
-func (mock *mockUDP) Protocol() string {
-	return "udp"
-}
-
-func (mock *mockUDP) Listen(onet *OverlayNetwork) (Listener, error) {
-	return nil, nil
-}
-
-func (mock *mockUDP) Dial(ctx context.Context, onet *OverlayNetwork) (Conn, error) {
+func (mock *mockTransport) Server(ctx context.Context, onet *OverlayNetwork, addr *Addr, next Next) (Conn, error) {
 	return nil, nil
 }
 
@@ -120,14 +83,14 @@ func init() {
 		panic(err)
 	}
 
-	if err := RegisterTransports(&mockKCP{}, &mockUDP{}, &mockMux{}); err != nil {
+	if err := RegisterTransports(&mockTransport{name: "kcp"}, &mockTransport{name: "tls"}, &mockTransport{name: "mux"}); err != nil {
 		panic(err)
 	}
 }
 
 func TestParseOverlayNetwork(t *testing.T) {
 
-	raddr, err := NewAddr("/ip/127.0.0.1/udp/1812/kcp/mux")
+	raddr, err := NewAddr("/ip/127.0.0.1/udp/1812/kcp/tls/mux")
 
 	require.NoError(t, err)
 
@@ -139,28 +102,12 @@ func TestParseOverlayNetwork(t *testing.T) {
 
 	require.NotNil(t, network)
 
-	require.Equal(t, 2, len(network.OverlayTransports))
+	require.Equal(t, len(network.Addrs), 3)
 
-	require.Equal(t, len(network.OverlayTransports), len(network.OverlayAddrs))
+	require.Equal(t, network.Addrs[0].String(), "/ip/127.0.0.1/udp/1812/kcp/tls/mux")
+	require.Equal(t, network.Addrs[1].String(), "/ip/127.0.0.1/udp/1812/kcp/tls")
+	require.Equal(t, network.Addrs[2].String(), "/ip/127.0.0.1/udp/1812/kcp")
 
-	require.Equal(t, 1, len(network.MuxTransports), 1)
-
-	require.Equal(t, len(network.MuxTransports), len(network.MuxAddrs))
-
-	require.NotNil(t, network.NativeTransport)
-
-	require.NotNil(t, network.NavtiveAddr)
-
-	require.Equal(t, network.Addr.String(), raddr.String())
-
-	require.Equal(t, network.MuxAddrs[0].String(), "/mux")
-
-	require.Equal(t, network.OverlayAddrs[0].String(), "/kcp")
-	require.Equal(t, network.OverlayAddrs[1].String(), "/mux")
-
-	require.Equal(t, network.OverlayTransports[1], network.MuxTransports[0])
-
-	require.Equal(t, network.NavtiveAddr.String(), "/ip/127.0.0.1/udp/1812")
 }
 
 func BenchmarkParseOverlayNetwork(t *testing.B) {

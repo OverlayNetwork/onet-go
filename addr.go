@@ -12,13 +12,16 @@ import (
 type SubAddr interface {
 	Protocol() string
 	Value() string
+	Native() bool
 }
 
 // Protocol .
 type Protocol struct {
-	Name       string
-	HasValue   bool
+	Name string
+	// HasValue   bool
 	CheckValue func(value string) error
+	// Indicate native protocol
+	Native bool
 }
 
 func (p *Protocol) String() string {
@@ -101,6 +104,12 @@ func (addr *Addr) SubAddrs() []SubAddr {
 	return addr.subaddrs
 }
 
+// Join .
+func (addr *Addr) Join(subAddrs ...SubAddr) *Addr {
+	return &Addr{append(addr.subaddrs, subAddrs...)}
+
+}
+
 // JoinAddr .
 func JoinAddr(subAddrs ...SubAddr) *Addr {
 	return &Addr{
@@ -147,8 +156,9 @@ func newAddr(addr string) ([]SubAddr, error) {
 }
 
 type subAddr struct {
-	name  string
-	value string
+	name   string
+	value  string
+	native bool
 }
 
 func (sa *subAddr) Protocol() string {
@@ -157,6 +167,10 @@ func (sa *subAddr) Protocol() string {
 
 func (sa *subAddr) Value() string {
 	return sa.value
+}
+
+func (sa *subAddr) Native() bool {
+	return sa.native
 }
 
 func newSubAddr(comps []string) (SubAddr, []string, error) {
@@ -183,12 +197,13 @@ func newSubAddr(comps []string) (SubAddr, []string, error) {
 	}
 
 	sa := &subAddr{
-		name: name,
+		name:   name,
+		native: protocol.Native,
 	}
 
 	comps = comps[1:]
 
-	if protocol.HasValue {
+	if protocol.CheckValue != nil {
 		if len(comps) == 0 {
 			return nil, nil, errors.Wrap(ErrParams, "protocol %s require value", name)
 		}
