@@ -78,6 +78,10 @@ func (mock *mockTransport) Server(ctx context.Context, onet *OverlayNetwork, add
 	return nil, nil
 }
 
+func (mock *mockTransport) Close(onet *OverlayNetwork, addr *Addr, next NextClose) error {
+	return nil
+}
+
 func init() {
 	if err := RegisterProtocols(mockProtocols...); err != nil {
 		panic(err)

@@ -221,40 +221,46 @@ func newSubAddr(comps []string) (SubAddr, []string, error) {
 }
 
 // ResolveNetAddr .
-func (addr *Addr) ResolveNetAddr() (net.Addr, error) {
+func (addr *Addr) ResolveNetAddr() (net.Addr, *Addr, error) {
 	subAddrs := addr.SubAddrs()
 
 	if len(subAddrs) < 2 {
-		return nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
+		return nil, nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
 	}
 
 	if subAddrs[0].Protocol() != "ip" {
-		return nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
+		return nil, nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
 	}
 
 	if subAddrs[1].Protocol() != "tcp" && subAddrs[1].Protocol() != "udp" {
-		return nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
+		return nil, nil, errors.Wrap(ErrAddr, "can't parse addr %s as net addr", addr.String())
 	}
 
 	str := fmt.Sprintf("%s:%s", subAddrs[0].Value(), subAddrs[1].Value())
+
+	relativeAddr := JoinAddr()
+
+	if len(subAddrs) > 2 {
+		relativeAddr = JoinAddr(subAddrs[2:]...)
+	}
 
 	if subAddrs[1].Protocol() == "tcp" {
 		tcpAddr, err := net.ResolveTCPAddr("tcp", str)
 
 		if err != nil {
-			return nil, errors.Wrap(err, "resolve net addr %s error", str)
+			return nil, nil, errors.Wrap(err, "resolve net addr %s error", str)
 		}
 
-		return tcpAddr, nil
+		return tcpAddr, relativeAddr, nil
 	}
 
 	udpAddr, err := net.ResolveUDPAddr("udp", str)
 
 	if err != nil {
-		return nil, errors.Wrap(err, "resolve net addr %s error", str)
+		return nil, nil, errors.Wrap(err, "resolve net addr %s error", str)
 	}
 
-	return udpAddr, nil
+	return udpAddr, relativeAddr, nil
 }
 
 // FromNetAddr create addr from net.Addr

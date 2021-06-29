@@ -37,10 +37,12 @@ var builtinProtocols = []*Protocol{
 	{
 		Name:       "udp",
 		CheckValue: checkPort,
+		Native:     true,
 	},
 	{
 		Name:       "tcp",
 		CheckValue: checkPort,
+		Native:     true,
 	},
 }
 

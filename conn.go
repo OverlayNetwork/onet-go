@@ -47,9 +47,10 @@ func Dial(ctx context.Context, raddr *Addr, options ...Option) (Conn, error) {
 
 type netConnWrapper struct {
 	net.Conn
-	onet  *OverlayNetwork
-	laddr *Addr
-	raddr *Addr
+	onet    *OverlayNetwork
+	laddr   *Addr
+	raddr   *Addr
+	closing func() error
 }
 
 func (conn *netConnWrapper) LocalAddr() *Addr {
@@ -64,8 +65,26 @@ func (conn *netConnWrapper) ONet() *OverlayNetwork {
 	return conn.onet
 }
 
+func (conn *netConnWrapper) Close() error {
+	if err := conn.Conn.Close(); err != nil {
+		return err
+	}
+
+	if conn.closing != nil {
+		return conn.closing()
+	}
+
+	return nil
+}
+
 // ToOnetConn .
-func ToOnetConn(conn net.Conn, onet *OverlayNetwork) (Conn, error) {
+func ToOnetConn(conn net.Conn, onet *OverlayNetwork, addr *Addr) (Conn, error) {
+
+	_, relativeAddr, err := addr.ResolveNetAddr()
+
+	if err != nil {
+		return nil, err
+	}
 
 	laddr, err := FromNetAddr(conn.LocalAddr())
 
@@ -79,16 +98,9 @@ func ToOnetConn(conn net.Conn, onet *OverlayNetwork) (Conn, error) {
 		return nil, err
 	}
 
-	return &netConnWrapper{
-		Conn:  conn,
-		onet:  onet,
-		laddr: laddr,
-		raddr: raddr,
-	}, nil
-}
+	laddr = laddr.Join(relativeAddr.SubAddrs()...)
 
-// ToOnetConnWithAddr .
-func ToOnetConnWithAddr(conn net.Conn, onet *OverlayNetwork, laddr, raddr *Addr) (Conn, error) {
+	raddr = raddr.Join(relativeAddr.SubAddrs()...)
 
 	return &netConnWrapper{
 		Conn:  conn,
@@ -115,13 +127,13 @@ func (conn *onetConnWrapper) RemoteAddr() net.Addr {
 // FromOnetConn .
 func FromOnetConn(conn Conn) (net.Conn, error) {
 
-	laddr, err := conn.LocalAddr().ResolveNetAddr()
+	laddr, _, err := conn.LocalAddr().ResolveNetAddr()
 
 	if err != nil {
 		return nil, err
 	}
 
-	raddr, err := conn.RemoteAddr().ResolveNetAddr()
+	raddr, _, err := conn.RemoteAddr().ResolveNetAddr()
 
 	if err != nil {
 		return nil, err

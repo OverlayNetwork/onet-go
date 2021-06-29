@@ -40,8 +40,6 @@ func ParseOverlayNetwork(addr *Addr, options ...Option) (*OverlayNetwork, error)
 
 		current := subAddrs[count-i]
 
-		result.D("parse sub protocol {@p}", current.Protocol())
-
 		transport, ok := transports[current.Protocol()]
 
 		if !ok {

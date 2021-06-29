@@ -13,10 +13,14 @@ type Transport interface {
 	Protocol() string
 	Client(ctx context.Context, onet *OverlayNetwork, addr *Addr, next Next) (Conn, error)
 	Server(ctx context.Context, onet *OverlayNetwork, addr *Addr, next Next) (Conn, error)
+	Close(onet *OverlayNetwork, addr *Addr, next NextClose) error
 }
 
-// Next .
+// Next ...
 type Next func() (Conn, error)
+
+// Next ...
+type NextClose func() error
 
 var transports = make(map[string]Transport)
 
@@ -40,4 +44,11 @@ func RegisterTransports(transports ...Transport) error {
 	}
 
 	return nil
+}
+
+// LookupTransport .
+func LookupTransport(protocol string) (Transport, bool) {
+	transport, ok := transports[protocol]
+
+	return transport, ok
 }

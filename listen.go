@@ -28,12 +28,22 @@ func acceptNextTransport(ctx context.Context, network *OverlayNetwork, i int) (C
 	return nil, nil
 }
 
+func closeNextTransport(network *OverlayNetwork, i int) error {
+	if i < len(network.Transports) {
+		return network.Transports[i].Close(network, network.Addrs[i], func() error {
+			return closeNextTransport(network, i+1)
+		})
+	}
+
+	return nil
+}
+
 func (l *listenerImpl) Accept() (Conn, error) {
 	return acceptNextTransport(context.Background(), l.network, 0)
 }
 
 func (l *listenerImpl) Close() error {
-	return nil
+	return closeNextTransport(l.network, 0)
 }
 
 func (l *listenerImpl) Addr() *Addr {
@@ -78,7 +88,7 @@ func (listener *onetListenerWrapper) Addr() net.Addr {
 
 // FromOnetListener .
 func FromOnetListener(listener Listener) (net.Listener, error) {
-	laddr, err := listener.Addr().ResolveNetAddr()
+	laddr, _, err := listener.Addr().ResolveNetAddr()
 
 	if err != nil {
 		return nil, err
